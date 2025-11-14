@@ -53,15 +53,15 @@ class UserProfile(AbstractUser):
     name = models.CharField(max_length=100, null=True, blank=True)
     first_name = models.CharField(max_length=50, null=True, blank=True)
     last_name = models.CharField(max_length=50, null=True, blank=True)
-    mobile_no = models.CharField(unique=True, max_length=20)
+    mobile_no = models.CharField(unique=True, max_length=20, null=True, blank=True)
     profile_image = models.URLField(max_length=200, blank=True, null=True)
-    
+    company = models.ForeignKey("Company_Master", on_delete=models.SET_NULL, null=True, blank=True)
     # OTP related
     otp = models.CharField(max_length=400, null=True, blank=True)
     otp_created = models.DateTimeField(null=True, blank=True)
 
     # Custom fields
-    role_name = models.ForeignKey(UserRole, on_delete=models.CASCADE, null=True, blank=True)
+    role_name = models.ForeignKey(UserRole, on_delete=models.CASCADE,null=True, blank=True)
     admin_flag = models.BooleanField(default=False)
     #search_engine = models.CharField(max_length=800, null=True, blank=True)
 
@@ -71,7 +71,6 @@ class UserProfile(AbstractUser):
     updated_at = models.DateTimeField(auto_now=True, null=True)
     updated_by = models.CharField(max_length=100, null=True, blank=True)
     is_active = models.BooleanField(default=True)
-
     # Manager
     objects = UserManager()
 

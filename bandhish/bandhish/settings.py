@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+from queue import Queue
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -61,13 +62,19 @@ MIDDLEWARE = [
 ALLOWED_HOSTS = ["*",]
 
 
-# CSRF_TRUSTED_ORIGINS = [
-#     "*",
-# ]
 
-# CORS_ALLOWED_ORIGINS = [
-#   "*",
-# ]
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "https://ea1d7d91e0ba.ngrok-free.app",
+    
+]
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "https://ea1d7d91e0ba.ngrok-free.app",
+]
 
 CORS_ALLOW_HEADERS = [
     "accept",
@@ -183,3 +190,45 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+#celery settings
+# Celery
+from kombu import Queue
+from decouple import config
+
+CELERY_BROKER_URL = "redis://localhost:6379/5"
+CELERY_RESULT_BACKEND = "redis://localhost:6379/5"
+
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+
+# The queue you want your worker to listen on
+CELERY_DEFAULT_QUEUE = config("CELERY_QUEUE")   # example: "bandish"
+
+# Proper queue declaration
+CELERY_QUEUES = (
+    Queue(
+        CELERY_DEFAULT_QUEUE,
+        routing_key=CELERY_DEFAULT_QUEUE
+    ),
+)
+
+# Route all tasks to this queue by default
+CELERY_TASK_ROUTES = {
+    "*": {"queue": CELERY_DEFAULT_QUEUE},
+}
+
+CELERY_TRACK_STARTED = True
+
+CELERY_TIMEZONE = "Asia/Kolkata"
+
+## Email settings
+EMAIL_USE_TLS = True
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_HOST_USER = config("EMAIL_USER")
+EMAIL_HOST_PASSWORD = config("EMAIL_PASS")
+
+GOOGLE_CLIENT_ID = config("GOOGLE_CLIENT_ID")
+

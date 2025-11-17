@@ -230,108 +230,9 @@ class LogoutView(APIView):
 import requests
 
 class GoogleLoginView(APIView):
-    # def post(self, request):
-        # access_token = request.data.get('access_token')
-        # response = requests.get(
-        #     'https://www.googleapis.com/oauth2/v3/userinfo',
-        #     params={'access_token': access_token}
-        # )
-        # data = response.json()
-        # email = data.get('email')
-        # #fetch the first_name and last_name from data and if nothing
-
-        # user = UserProfile.objects.filter(email=email).first()
-        # if user:
-        #     # if user assign the adam voice to it
-        #     token, created = Token.objects.get_or_create(user=user)
-        #     return Response({'email':email,'token': token.key}, status=status.HTTP_200_OK)
-        # else:
-        #     # if user not found then register the user
-        #     user = UserProfile.objects.create(email=email)
-        #     name = data.get('given_name')
-        #     last_name = data.get('family_name')
-        #     user.name = name
-        #     user.last_name = last_name
-        #     # if user assign the adam voice to it
-        #     user.save()
-        #     token, created = Token.objects.get_or_create(user=user)
-        #     return Response({ 'email':email,'token': token.key}, status=status.HTTP_200_OK)
-        #     #return Response({'error':'User not found'}, status=status.HTTP_400_BAD_REQUEST)
-    
-    # def post(self, request):
-        # access_token = request.data.get('token')
-        # print(f"Received access token: {access_token}")  # Debugging line
-        # if not access_token:
-        #     return Response({'error': 'access_token is required'}, status=status.HTTP_400_BAD_REQUEST)
-
-        # # Hit Google userinfo API
-        # google_response = requests.get(
-        #     'https://www.googleapis.com/oauth2/v3/userinfo',
-        #     params={'token': access_token}
-        # )
-        # print(f"Google response status code: {google_response.status_code}")  # Debugging line
-        
-        # if google_response.status_code != 200:
-        #     return Response({'error': 'Invalid Google access token'}, status=status.HTTP_400_BAD_REQUEST)
-
-        # data = google_response.json()
-        # print(f"Google user info: {data}")  # Debugging line
-        # email = data.get('email')
-        # if not email:
-        #     return Response({'error': 'Google did not return an email'}, status=status.HTTP_400_BAD_REQUEST)
-
-        # first_name = data.get('given_name') or ''
-        # last_name = data.get('family_name') or ''
-        # full_name = data.get('name') or f"{first_name} {last_name}".strip()
-        # picture = data.get('picture') or None
-
-        # # Check if user exists
-        # user = UserProfile.objects.filter(email=email).first()
-
-        # if user:
-        #     # Existing user → generate token
-        #     token, created = Token.objects.get_or_create(user=user)
-        #     return Response({
-        #         'message': 'Login successful',
-        #         'email': email,
-        #         'token': token.key,
-        #         'name': user.name,
-        #         'role': user.role_name.role_name if user.role_name else None,
-        #         'profile_image': user.profile_image
-        #     }, status=status.HTTP_200_OK)
-
-        # # If user does NOT exist → Create new user
-        # default_role = UserRole.objects.get(role_name="user")
-        # print(f"Creating new user for email: {email}")  # Debugging line
-        
-        # user = UserProfile.objects.create(
-        #     email=email,
-        #     name=full_name,
-        #     first_name=first_name,
-        #     last_name=last_name,
-        #     profile_image=picture,
-        #     mobile_no=None,         # field is nullable so OK
-        #     role_name=default_role, # assign default role
-        #     company=None,           # no company for Google users
-        # )
-        # user.set_unusable_password()  # No password login for Google users
-        # user.save()
-
-        # # Generate token for new user
-        # token, created = Token.objects.get_or_create(user=user)
-
-        # return Response({
-        #     'message': 'User registered & logged in successfully',
-        #     'email': email,
-        #     'token': token.key,
-        #     'name': user.name,
-        #     'role': user.role_name.role_name if user.role_name else None,
-        #     'profile_image': user.profile_image
-        # }, status=status.HTTP_200_OK)
-
     def post(self, request):
         id_token_from_frontend = request.data.get("token")
-        print(f"Received ID token: {id_token_from_frontend}")  # Debugging line
+        #print(f"Received ID token: {id_token_from_frontend}")  # Debugging line
         if not id_token_from_frontend:
             return Response({"error": "id_token is required"}, status=400)
 
@@ -350,13 +251,13 @@ class GoogleLoginView(APIView):
                 google_requests.Request(),
                 settings.GOOGLE_CLIENT_ID  # ← Replace with your actual Google Client ID
             )
-            print(f"Google user info: {google_user}")  # Debugging line
+            #print(f"Google user info: {google_user}")  # Debugging line
             email = google_user.get("email")
-            print(f"Email extracted: {email}")  # Debugging line
+            #print(f"Email extracted: {email}")  # Debugging line
             name = google_user.get("name", "")
-            print(f"Name extracted: {name}")  # Debugging line
+            #print(f"Name extracted: {name}")  # Debugging line
             picture = google_user.get("picture", "")
-            print(f"Picture URL extracted: {picture}")  # Debugging line
+            #print(f"Picture URL extracted: {picture}")  # Debugging line
 
         except Exception as e:
             return Response({"error": "Invalid Google ID token"}, status=400)

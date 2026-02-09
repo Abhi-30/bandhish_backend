@@ -1,5 +1,6 @@
 from django.db import models
 
+from accounts.models import UserProfile
 # Create your models here.
 class MasterFlow(models.Model):
     flow_name = models.CharField(max_length=255, unique=True)
@@ -7,11 +8,50 @@ class MasterFlow(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.CharField(max_length=100, null=True, blank=True)
-    updated_by = models.CharField(max_length=100, null=True, blank=True)
+    created_by = models.ForeignKey(UserProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_flows')
+    updated_by = models.ForeignKey(UserProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_flows')
     
     def __str__(self):
         return self.flow_name
+
+class Template(models.Model):
+    
+    flow = models.ForeignKey(
+        MasterFlow,
+        on_delete=models.CASCADE,
+        related_name="templates"
+    )
+
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+
+    is_premium = models.BooleanField(default=False)
+    template_data = models.JSONField()  # or TextField if needed
+    created_by = models.ForeignKey(
+        UserProfile,
+        on_delete=models.CASCADE,
+        related_name="templates"
+    )
+
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        UserProfile,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="updated_templates"
+    )
+
+    def __str__(self):
+        return f"{self.name} ({'Premium' if self.is_premium else 'Free'})"
+
+
+
+
+
+
 
 class MasterApplication(models.Model):
     application_name = models.CharField(max_length=255, unique=True)

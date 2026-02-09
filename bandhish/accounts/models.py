@@ -35,10 +35,10 @@ class UserManager(BaseUserManager):
 class UserRole(models.Model):
     role_name = models.CharField(max_length=100, unique=True)
     is_active = models.BooleanField(default=True)
-    Created_At=models.DateTimeField(auto_now_add=True,blank=True,null=True)
-    Created_By=models.CharField(max_length=100,null=True,blank=True)
-    Updated_At=models.DateTimeField(auto_now_add=True,null=True,blank=True)
-    Updated_By=models.CharField(max_length=100,null=True,blank=True)
+    created_at=models.DateTimeField(auto_now_add=True,blank=True,null=True)
+    created_by=models.CharField(max_length=100,null=True,blank=True)
+    updated_at=models.DateTimeField(auto_now=True,null=True,blank=True)
+    updated_by=models.CharField(max_length=100,null=True,blank=True)
 
     def __str__(self):
         return self.role_name
@@ -47,14 +47,14 @@ from django.core.validators import validate_email
 class UserProfile(AbstractUser):
     # Override username
     username = None  
-    email = models.EmailField(unique=True, primary_key=True, validators=[validate_email])
+    email = models.EmailField(unique=True,validators=[validate_email])
 
     # Optional fields
     name = models.CharField(max_length=100, null=True, blank=True)
     first_name = models.CharField(max_length=50, null=True, blank=True)
     last_name = models.CharField(max_length=50, null=True, blank=True)
     mobile_no = models.CharField(unique=True, max_length=20, null=True, blank=True)
-    profile_image = models.URLField(max_length=200, blank=True, null=True)
+    profile_image = models.CharField(max_length=2000, blank=True, null=True)
     company = models.ForeignKey("Company_Master", on_delete=models.SET_NULL, null=True, blank=True)
     # OTP related
     otp = models.CharField(max_length=400, null=True, blank=True)
@@ -75,7 +75,7 @@ class UserProfile(AbstractUser):
     objects = UserManager()
 
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["mobile_no"]
+    REQUIRED_FIELDS = []
 
     def __str__(self):
         return self.email
@@ -116,4 +116,18 @@ class Customer_Master(models.Model):
     def __str__(self):
         return self.customer_name
 
+
+class CustomAvatarPreUploadVideo(models.Model):
+    #user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name="avatars") 
+    avatar_name = models.CharField(max_length=255)
+    media_url = models.URLField(max_length=1000,null=True, blank=True)  # Public S3 URL of uploaded video/audio
+    consent_url = models.URLField(max_length=1000,null=True, blank=True)  # Public S3 URL of consent document
+    created_at = models.DateTimeField(auto_now_add=True)
+    unique_id = models.CharField(max_length=1000, unique=True, null=True, blank=True)
+    avatar_id = models.CharField(max_length=255, null=True, blank=True) 
+    heygen_status = models.CharField(max_length=50, default="pending")
+    
+    
+    def __str__(self):
+        return self.avatar_name
 

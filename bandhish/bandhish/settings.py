@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'accounts',
     'flows',
-
+    'storages',
 ]
 
 MIDDLEWARE = [
@@ -66,14 +66,13 @@ ALLOWED_HOSTS = ["*",]
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:5174",
-    "https://ea1d7d91e0ba.ngrok-free.app",
-    
+    "https://0ee7-2402-e280-3e9a-6d3-9b59-ce96-5be4-d038.ngrok-free.app",
 ]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:5174",
-    "https://ea1d7d91e0ba.ngrok-free.app",
+    "https://0ee7-2402-e280-3e9a-6d3-9b59-ce96-5be4-d038.ngrok-free.app",
 ]
 
 CORS_ALLOW_HEADERS = [
@@ -232,3 +231,19 @@ EMAIL_HOST_PASSWORD = config("EMAIL_PASS")
 
 GOOGLE_CLIENT_ID = config("GOOGLE_CLIENT_ID")
 
+
+AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = config("AWS_STORAGE_BUCKET_NAME")
+AWS_S3_REGION_NAME = config("AWS_S3_REGION_NAME")          # India region example
+AWS_S3_SIGNATURE_VERSION = "s3v4"
+
+HEYGEN_API_KEY = config("HEYGEN_API_KEY")
+
+# Make uploaded files publicly accessible
+AWS_DEFAULT_ACL = "public-read"
+
+AWS_S3_FILE_OVERWRITE = False
+AWS_QUERYSTRING_AUTH = False
+
+DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"

@@ -1,7 +1,7 @@
 
 from django.urls import path 
 
-from .views import AdminAddClientAPI, ChangePassword, CreateHeyGenAvatarAPI, EditUserAPI, ForgetPassword, GoogleLoginView, HeyGenAvatarCallbackAPI, LoginAPI, LogoutView, ResetPassword,SimpleRegisterAPI,GetUserRoles, UploadVideoAPIToS3, UserDetailsAPI
+from .views import AddAdminWalletTransactions, AdminAddClientAPI, ChangePassword, CreateHeyGenAvatarAPI, EditUserAPI, ForgetPassword, GoogleLoginView, HeyGenAvatarCallbackAPI, LoginAPI, LogoutView, ResetPassword,SimpleRegisterAPI,GetUserRoles, UploadVideoAPIToS3, UserDetailsAPI,AdminWalletAPI
 
 urlpatterns = [
     #path('api/', include('accounts.urls')),
@@ -16,6 +16,9 @@ urlpatterns = [
     path('logout/',LogoutView.as_view(), name='logout'),
     path('google_login/',GoogleLoginView.as_view(), name='google_login'),
     path('admin/add_client/',AdminAddClientAPI.as_view(), name='admin_add_client'),
+    
+    path('admin_wallet/',AdminWalletAPI.as_view(), name='admin_wallet'),
+    path('admin_wallet_transaction/',AddAdminWalletTransactions.as_view(), name='admin_wallet_transaction'),
     
     path('upload_video_to_s3/',UploadVideoAPIToS3.as_view(), name='upload_video_to_s3'),
     path('HeyGenAvatarCallbackAPI/',HeyGenAvatarCallbackAPI.as_view(), name='HeyGenAvatarCallbackAPI'),

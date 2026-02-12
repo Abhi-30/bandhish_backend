@@ -15,7 +15,7 @@ from django.contrib.auth import authenticate
 
 from .serializer import SimpleRegisterSerializer,EditUserSerializer,ChangePasswordSerializer,AdminAddClientSerializer
 from rest_framework import status
-from .models import Company_Master, UserProfile, UserRole
+from .models import AdminWallet, Company_Master, UserProfile, UserRole
 from random import randint
 
 class LoginAPI(APIView):
@@ -332,7 +332,30 @@ class GoogleLoginView(APIView):
                 "mobile_no": None
             }
         )
-
+        
+        if created:
+            print(f"New user created: {user.email}")  # Debugging line
+            user_role = UserRole.objects.filter(role_name="User").first()
+            print(f"User role fetched: {user_role}")  # Debugging line
+            if user_role and not user.role_name:
+                user.role_name = user_role
+                user.save(update_fields=["role_name"])
+        else:
+            print(f"Existing user fetched: {user.email}")  # Debugging line
+            #here check the role of user 
+            if user.admin_flag:
+                user_role = UserRole.objects.filter(role_name="Super Admin").first()
+                if user_role and not user.role_name:
+                    user.role_name = user_role
+                    user.save(update_fields=["role_name"])
+            else:
+                user_role = UserRole.objects.filter(role_name="User").first()
+                if user_role and not user.role_name:
+                    user.role_name = user_role
+                    user.save(update_fields=["role_name"])
+            
+        print(f"User {'created' if created else 'fetched'}: {user.email}") # Debugging line
+        
         # Create token
         token, _ = Token.objects.get_or_create(user=user)
 
@@ -341,6 +364,7 @@ class GoogleLoginView(APIView):
             "email": user.email,
             "token": token.key,
             "name": user.name,
+            "role":user.role_name.role_name if user.role_name else None,
             "profile_image": user.profile_image
         })
 
@@ -1135,3 +1159,144 @@ class CreateHeyGenAvatarAPI(APIView):
             #"avatar_record_id": avatar_record.id,
             "heygen_response": data
         }, status=200)
+
+
+
+import requests
+from decimal import Decimal
+from django.conf import settings
+
+def sync_admin_wallet(admin_user):
+    url = "https://api.heygen.com/v2/user/remaining_quota"
+
+    headers = {
+        "Accept": "application/json",
+        "X-Api-Key": settings.HEYGEN_API_KEY
+    }
+
+
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        print("HeyGen API Error:", response.text)
+        raise Exception("Failed to sync HeyGen wallet")
+
+
+    data = response.json()["data"]
+
+    remaining_seconds = Decimal(data["remaining_quota"])
+    remaining_credits = remaining_seconds / Decimal(60)
+
+    wallet, _ = AdminWallet.objects.get_or_create(admin_user=admin_user)
+    print(f"Syncing wallet for {admin_user.email}: Remaining seconds from HeyGen: {remaining_seconds}, which is {remaining_credits} credits") # Debugging line
+    wallet.credits_remaining = remaining_credits
+    #wallet.total_credits = remaining_credits
+    wallet.save(update_fields=["credits_remaining"])
+    return wallet
+
+class AdminWalletAPI(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        user = request.user
+        print(f"Authenticated user: {user.email}, admin_flag: {user.admin_flag}") # Debugging line
+        try:
+            user_profile = UserProfile.objects.get(email=user.email, is_active=True)
+        except UserProfile.DoesNotExist: 
+            return Response({"error": "User profile not found"}, status=404)
+
+        print(f"User profile found: {user_profile.email}, admin_flag: {user_profile.admin_flag}") # Debugging line
+
+        role = user_profile.role_name.role_name if user_profile.role_name else None 
+        print(f"User role: {role}") # Debugging line
+        if role != "Super Admin":
+            return Response({"error": "Only admins can access wallet info"}, status=403)
+        
+        wallet = sync_admin_wallet(user_profile)
+
+        return Response({
+            "remaining_credits": wallet.credits_remaining,
+            "total_allocated": wallet.total_credits,
+        })
+    
+    
+from django.db import transaction
+from decimal import Decimal
+from .serializer import AdminWalletTransactionSerializer
+from .models import AdminWallet, AdminWalletTransaction
+
+class AddAdminWalletTransactions(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        try:
+            user_profile = UserProfile.objects.get(
+                email=user.email,
+                is_active=True
+            )
+        except UserProfile.DoesNotExist:
+            return Response({"error": "User profile not found"}, status=404)
+
+        role = user_profile.role_name.role_name if user_profile.role_name else None
+        print(f"User role: {role}")  # Debugging line
+        if role != "Super Admin":
+            return Response(
+                {"error": "Only admins can add wallet transactions"},
+                status=403
+            )
+
+        serializer = AdminWalletTransactionSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+
+        with transaction.atomic():
+
+            # Get or create wallet
+            wallet, _ = AdminWallet.objects.get_or_create(
+                admin_user=user_profile
+            )
+            print("wallet before transaction:", wallet.credits_remaining)  # Debugging line
+
+            credits = Decimal(serializer.validated_data["credits"])
+            transaction_type = serializer.validated_data["transaction_type"]
+
+            # 🔹 CREDIT
+            if transaction_type == "credit":
+                wallet.credits_remaining += credits
+                wallet.total_credits += credits
+
+            # 🔹 DEBIT
+            elif transaction_type == "debit":
+                if wallet.credits_remaining < credits:
+                    return Response(
+                        {"error": "Insufficient credits"},
+                        status=400
+                    )
+                wallet.credits_remaining -= credits
+                wallet.credits_used += credits
+
+            wallet.updated_by = user.email
+            wallet.save()
+
+            # Create transaction entry
+            AdminWalletTransaction.objects.create(
+                wallet=wallet,
+                transaction_type=transaction_type,
+                amount=serializer.validated_data["amount"],
+                credits=credits,
+                description=serializer.validated_data.get("description"),
+                created_by=user.email
+            )
+        return Response(
+            {"message": "Transaction added and wallet updated successfully"},
+            status=201
+        )
+
+
+        
+    

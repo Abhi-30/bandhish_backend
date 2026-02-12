@@ -10,7 +10,7 @@ class SimpleRegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         print(f"Creating user with data: {validated_data}")  # Debugging line
-        default_role = UserRole.objects.get(role_name="user")
+        default_role = UserRole.objects.get(role_name="User")
 
         user = UserProfile.objects.create(
             email=validated_data["email"],
@@ -197,3 +197,56 @@ class AdminAddClientSerializer(serializers.ModelSerializer):
 
         return user
 
+
+
+from rest_framework import serializers
+from decimal import Decimal
+from .models import AdminWalletTransaction
+
+
+class AdminWalletTransactionSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = AdminWalletTransaction
+        fields = [
+            "transaction_type",
+            "amount",
+            "credits",
+            "description"
+        ]
+
+    def validate_transaction_type(self, value):
+        if value not in ["credit", "debit"]:
+            raise serializers.ValidationError(
+                "Transaction type must be 'credit' or 'debit'."
+            )
+        return value
+
+    def validate_credits(self, value):
+        if value <= 0:
+            raise serializers.ValidationError(
+                "Credits must be greater than 0."
+            )
+        return value
+
+    def validate_amount(self, value):
+        if value < 0:
+            raise serializers.ValidationError(
+                "Amount cannot be negative."
+            )
+        return value
+
+    def validate(self, attrs):
+        """
+        Additional cross-field validation if required.
+        Example: ensure debit amount equals credit usage logic.
+        """
+        transaction_type = attrs.get("transaction_type")
+        credits = attrs.get("credits")
+
+        if transaction_type == "debit" and credits <= 0:
+            raise serializers.ValidationError(
+                "Debit transaction must deduct positive credits."
+            )
+
+        return attrs

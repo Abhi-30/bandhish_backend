@@ -2,7 +2,22 @@ from django.contrib import admin
 
 # Register your models here.
 
-from accounts.models import UserProfile,UserRole,Company_Master,Customer_Master,CustomAvatarPreUploadVideo
+from accounts.models import UserProfile,UserRole,Company_Master,AdminWallet,AdminWalletTransaction,Customer_Master,CustomAvatarPreUploadVideo
+
+
+class companyAdminWallet(admin.ModelAdmin):
+    list_display = ('admin_user','total_credits','credits_used','credits_remaining','updated_at','updated_by')
+    list_display_links = ('admin_user','total_credits','credits_used','credits_remaining','updated_at','updated_by') 
+    search_fields = ('admin_user__email',) 
+    list_filter = ('admin_user__email',)
+admin.site.register(AdminWallet, companyAdminWallet)
+
+class AdminWalletTransactionAdmin(admin.ModelAdmin):
+    list_display = ('wallet', 'transaction_type', 'amount', 'credits','created_at','created_by')
+    list_display_links = ('wallet', 'transaction_type', 'amount', 'credits','created_at','created_by')
+    search_fields = ('wallet__admin_user__email', 'transaction_type') 
+    list_filter = ('transaction_type', 'created_at') 
+admin.site.register(AdminWalletTransaction, AdminWalletTransactionAdmin)
 
 class UserRoleAdmin(admin.ModelAdmin):
     list_display = ('role_name', 'is_active')

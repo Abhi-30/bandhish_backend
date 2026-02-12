@@ -83,6 +83,161 @@ class UserProfile(AbstractUser):
     def get_role_name(self):
         return self.role_name.role_name if self.role_name else None
 
+class AdminWallet(models.Model):
+    admin_user = models.OneToOneField(
+        UserProfile,
+        on_delete=models.CASCADE,
+        related_name="admin_wallet"
+    )
+    
+    total_credits = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
+    credits_used = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
+    credits_remaining = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.CharField(max_length=100, null=True, blank=True)
+    
+    
+    def __str__(self):
+        return f"{self.admin_user.email}"
+
+
+class AdminWalletTransaction(models.Model):
+    wallet = models.ForeignKey(AdminWallet, on_delete=models.CASCADE, related_name="transactions")
+    transaction_type = models.CharField(max_length=500)  # e.g., "credit", "debit"
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    credits = models.DecimalField(max_digits=10, decimal_places=2)  # Credits added or deducted
+    description = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.CharField(max_length=100, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.transaction_type.capitalize()} of {self.amount} credits for {self.wallet.admin_user.email}"
+    
+# class UserCreditWallet(models.Model):
+#     user = models.OneToOneField(
+#         UserProfile,
+#         on_delete=models.CASCADE,
+#         related_name="credit_wallet"
+#     )
+
+#     total_credits_allocated = models.DecimalField(
+#         max_digits=10,
+#         decimal_places=2,
+#         default=0
+#     )
+
+#     credits_used = models.DecimalField(
+#         max_digits=10,
+#         decimal_places=2,
+#         default=0
+#     )
+
+#     credits_remaining = models.DecimalField(
+#         max_digits=10,
+#         decimal_places=2,
+#         default=0
+#     )
+
+#     updated_at = models.DateTimeField(auto_now=True)
+#     updated_by = models.CharField(max_length=100, null=True, blank=True)
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     created_by = models.CharField(max_length=100, null=True, blank=True)
+    
+
+#     def __str__(self):
+#         return f"{self.user.email}"
+
+
+    
+# class CreditTransaction(models.Model):
+#     Choices = [
+#     ("avatar_training", "AVATAR_TRAINING (4 credits)"),
+#     ("avatar_motion", "AVATAR_MOTION (1 credits)"), 
+#     ("video_generation", "VIDEO_GENERATION (1 credits per minute)"), 
+#     ("other", "Other"),
+#     ]
+    
+#     user = models.ForeignKey(
+#         UserProfile,
+#         on_delete=models.CASCADE,
+#         related_name="credit_transactions"
+#     )
+
+#     usage_type = models.CharField(
+#         max_length=50,
+#         choices=Choices,
+#         default="other"
+#     )
+#     credits_consumed = models.DecimalField(
+#         max_digits=10,
+#         decimal_places=2
+#     )
+#     # Optional but VERY useful
+#     reference_id = models.CharField(
+#         max_length=255,
+#         null=True,
+#         blank=True
+#     )  # avatar_id / video_id / job_id
+
+#     heygen_request_id = models.CharField(
+#         max_length=255,
+#         null=True,
+#         blank=True
+#     )
+
+#     meta = models.JSONField(null=True, blank=True)
+
+#     created_at = models.DateTimeField(auto_now_add=True)
+
+#     class Meta:
+#         ordering = ["-created_at"]
+
+#     def __str__(self):
+#         return f"{self.user.email} | {self.usage_type} | {self.credits_consumed}"
+
+# class UserCreditWallet(models.Model):
+#     user = models.OneToOneField(
+#         UserProfile,
+#         on_delete=models.CASCADE,
+#         related_name="credit_wallet"
+#     )
+
+#     total_credits = models.DecimalField(
+#         max_digits=10,
+#         decimal_places=2,
+#         default=0
+#     )
+
+#     credits_used = models.DecimalField(
+#         max_digits=10,
+#         decimal_places=2,
+#         default=0
+#     )
+
+#     credits_remaining = models.DecimalField(
+#         max_digits=10,
+#         decimal_places=2,
+#         default=0
+#     )
+
+#     updated_at = models.DateTimeField(auto_now=True)
+
+#     def __str__(self):
+#         return f"{self.user.email} | Remaining: {self.credits_remaining}"
+
+
 
 class Company_Master(models.Model):
     company_name = models.CharField(max_length=200, unique=True)
@@ -92,7 +247,7 @@ class Company_Master(models.Model):
     is_active = models.BooleanField(default=True)
     created_at=models.DateTimeField(auto_now_add=True,blank=True,null=True)
     created_by=models.CharField(max_length=100,null=True,blank=True)
-    updated_at=models.DateTimeField(auto_now_add=True,null=True,blank=True)
+    updated_at=models.DateTimeField(auto_now=True,null=True,blank=True)
     updated_by=models.CharField(max_length=100,null=True,blank=True)
 
     def __str__(self):
@@ -110,7 +265,7 @@ class Customer_Master(models.Model):
     is_active = models.BooleanField(default=True)
     created_at=models.DateTimeField(auto_now_add=True,blank=True,null=True)
     created_by=models.CharField(max_length=100,null=True,blank=True)
-    updated_at=models.DateTimeField(auto_now_add=True,null=True,blank=True)
+    updated_at=models.DateTimeField(auto_now=True,null=True,blank=True)
     updated_by=models.CharField(max_length=100,null=True,blank=True)
 
     def __str__(self):

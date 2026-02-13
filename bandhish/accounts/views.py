@@ -85,7 +85,7 @@ class ForgetPassword(APIView):
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
         # Generate and save OTP
-        otp = randint(1000, 9999)
+        otp = randint(100000, 999999)
         user.otp = otp
         user.otp_created = timezone.now()
         user.save(update_fields=['otp', 'otp_created'])
@@ -127,8 +127,10 @@ class ResetPassword(APIView):
         email = request.data.get('email')
         otp = request.data.get('otp')
         new_password = request.data.get('new_password')
+        #print("new_password: ", new_password)  # Debugging line
+        #print(f"ResetPassword - Received email: {email}, otp: {otp}")  # Debugging line
         user = UserProfile.objects.filter(email=email, otp=otp).first()
-        print(f"ResetPassword - user found: {user}")  # Debugging line
+        #print(f"ResetPassword - user found: {user}")  # Debugging line
         if user:
             #check if otp is expired or not (5 minutes)
             time_diff = timezone.now() - user.otp_created
